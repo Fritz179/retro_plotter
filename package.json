@@ -1,0 +1,22 @@
+{
+  "name": "retro_plotter",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app/main.js",
+  "scripts": {
+    "start": "node app/main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Fritz179/retro_plotter.git"
+  },
+  "author": "Fritz_179",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Fritz179/retro_plotter/issues"
+  },
+  "homepage": "https://github.com/Fritz179/retro_plotter#readme",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
