@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Plotter</title>
+
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <script src="./font.js" defer></script>
+    <script src="./main.js" defer></script>
+
+    <label for="image">Choose a picture:</label>
+    <input id="imageInput" type="file" name="image" accept="image/png, image/jpeg">
+
+    <label for="scale" id="scaleLabel">Choose a scaling:</label>
+    <input type="range" min="1" max="10" value="2" id="scaleSlider">
+
+    <div>
+        <canvas id="imageCanvas"></canvas>
+
+        <label for="scaleAlg">Choose a object-fit:</label>
+        <select name="scaleAlg" id="scaleAlg">
+            <option value="Fill">Fill</option>
+            <option value="Contain">Contain</option>
+            <option value="Cover">Cover</option>
+            <option value="None">None</option>
+        </select>
+
+        <canvas id="grayCanvas"></canvas>
+
+        <label for="dotAlg">Choose a dithering algorithm:</label>
+        <select name="dotAlg" id="dotAlg">
+            <option value="Threshold">Threshold</option>
+            <option value="Random">Random</option>
+            <option value="Threshold4">ThresholdGrid2</option>
+            <option value="Ordered4">Ordered 2x2</option>
+            <option value="Ordered8">Ordered 4x4</option>
+            <option value="Ordered16">Ordered 8x8</option>
+            <option value="OrderedBlock4">OrderedBlock 2x2</option>
+            <option value="OrderedBlock8">OrderedBlock 4x4</option>
+            <option value="OrderedBlock16">OrderedBlock 8x8</option>
+            <option value="1D">1DDiffusion</option>
+            <option value="2D">2DDiffusion</option>
+            <option value="Floyd-Steinberg">Floyd-Steinberg</option>
+            <option value="Jarvis">Jarvis, Judice & Ninke</option>
+            <option value="Atkinson">Atkinson</option>
+            <option value="Fritz">Fritz</option>
+        </select>
+
+        <canvas id="dotCanvas"></canvas>
+        <canvas id="execCanvas"></canvas>
+    </div>
+
+    
+    <label for="text">Choose a text to print:</label>
+    <input type="text" id="text">
+    <br>
+
+    <button id="showCode">Show Code</button>
+    <label for="codeAlg">Choose a code generation algorithm:</label>
+    <select name="codeAlg" id="codeAlg">
+        <option value="Basic">Basic</option>
+        <option value="Linear">Linear</option>
+        <option value="Fritz">Fritz</option>
+    </select>
+
+    <pre id="g"></pre>
+</body>
+</html>
