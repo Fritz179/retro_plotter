@@ -5,7 +5,9 @@
 canvas {
     width: calc(210px * var(--scale));
     height: calc(297px * var(--scale));
+}
 
+.pixelated {
     image-rendering: optimizeSpeed;             /* Older versions of FF          */
     image-rendering: -moz-crisp-edges;          /* FF 6.0+                       */
     image-rendering: -webkit-optimize-contrast; /* Safari                        */

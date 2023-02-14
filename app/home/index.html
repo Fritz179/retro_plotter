@@ -12,61 +12,120 @@
     <script src="./font.js" defer></script>
     <script src="./main.js" defer></script>
 
-    <label for="image">Choose a picture:</label>
-    <input id="imageInput" type="file" name="image" accept="image/png, image/jpeg">
+    <label for="chose">Choose what to do:</label>
+    <select name="chose" id="chose">
+        <option value="imageChoice">Picture</option>
+        <option value="textChoice">Text</option>
+        <option value="yChoice">Y-Function</option>
+        <option value="xyChoice">X&Y-Functions</option>
+        <option value="equationChoice">X&Y-Equation</option>
+    </select>
+
+    <br>
 
     <label for="scale" id="scaleLabel">Choose a scaling:</label>
     <input type="range" min="1" max="10" value="2" id="scaleSlider">
 
-    <div>
-        <canvas id="imageCanvas"></canvas>
-
-        <label for="scaleAlg">Choose a object-fit:</label>
-        <select name="scaleAlg" id="scaleAlg">
-            <option value="Fill">Fill</option>
-            <option value="Contain">Contain</option>
-            <option value="Cover">Cover</option>
-            <option value="None">None</option>
-        </select>
-
-        <canvas id="grayCanvas"></canvas>
-
-        <label for="dotAlg">Choose a dithering algorithm:</label>
-        <select name="dotAlg" id="dotAlg">
-            <option value="Threshold">Threshold</option>
-            <option value="Random">Random</option>
-            <option value="Threshold4">ThresholdGrid2</option>
-            <option value="Ordered4">Ordered 2x2</option>
-            <option value="Ordered8">Ordered 4x4</option>
-            <option value="Ordered16">Ordered 8x8</option>
-            <option value="OrderedBlock4">OrderedBlock 2x2</option>
-            <option value="OrderedBlock8">OrderedBlock 4x4</option>
-            <option value="OrderedBlock16">OrderedBlock 8x8</option>
-            <option value="1D">1DDiffusion</option>
-            <option value="2D">2DDiffusion</option>
-            <option value="Floyd-Steinberg">Floyd-Steinberg</option>
-            <option value="Jarvis">Jarvis, Judice & Ninke</option>
-            <option value="Atkinson">Atkinson</option>
-            <option value="Fritz">Fritz</option>
-        </select>
-
-        <canvas id="dotCanvas"></canvas>
-        <canvas id="execCanvas"></canvas>
-    </div>
-
-    
-    <label for="text">Choose a text to print:</label>
-    <input type="text" id="text">
     <br>
 
-    <button id="showCode">Show Code</button>
-    <label for="codeAlg">Choose a code generation algorithm:</label>
-    <select name="codeAlg" id="codeAlg">
-        <option value="Basic">Basic</option>
-        <option value="Linear">Linear</option>
-        <option value="Fritz">Fritz</option>
-    </select>
+    <div id="imageChoice">
+        <div style="display: flex; flex-direction: column;">
+            <div>
+                <label for="image">Choose a picture:</label>
+                <input id="imageInput" type="file" name="image" accept="image/png, image/jpeg">
+            </div>
 
-    <pre id="g"></pre>
+            <canvas id="imageCanvas"></canvas>
+        </div>
+
+        <br>
+
+        <div style="display: flex; flex-direction: column;">
+            <div>
+                <label for="scaleAlg">Choose a object-fit:</label>
+                <select name="scaleAlg" id="scaleAlg">
+                    <option value="Fill">Fill</option>
+                    <option value="Contain">Contain</option>
+                    <option value="Cover">Cover</option>
+                    <option value="None">None</option>
+                </select>
+            </div>
+
+            <canvas id="grayCanvas" class="pixelated"></canvas>
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <div>
+                <label for="dotAlg">Choose a dithering algorithm:</label>
+                <select name="dotAlg" id="dotAlg">
+                    <option value="Threshold">Threshold</option>
+                    <option value="Random">Random</option>
+                    <option value="Threshold4">ThresholdGrid2</option>
+                    <option value="Ordered4">Ordered 2x2</option>
+                    <option value="Ordered8">Ordered 4x4</option>
+                    <option value="Ordered16">Ordered 8x8</option>
+                    <option value="OrderedBlock4">OrderedBlock 2x2</option>
+                    <option value="OrderedBlock8">OrderedBlock 4x4</option>
+                    <option value="OrderedBlock16">OrderedBlock 8x8</option>
+                    <option value="1D">1DDiffusion</option>
+                    <option value="2D">2DDiffusion</option>
+                    <option value="Floyd-Steinberg">Floyd-Steinberg</option>
+                    <option value="Jarvis">Jarvis, Judice & Ninke</option>
+                    <option value="Atkinson">Atkinson</option>
+                    <option value="Fritz">Fritz</option>
+                </select>
+            </div>
+
+            <canvas id="dotCanvas" class="pixelated"></canvas>
+        </div>
+    </div>
+
+    <div id="textChoice">
+        <label for="text">Choose a text to print:</label>
+        <textarea name="text" id="text" cols="20" rows="2"></textarea>
+    </div>
+    
+    <div id="yChoice">
+        <label for="funY">Choose an expression for y = `x`</label>
+        <input type="text" id="funY">
+    </div>
+
+    <div id="xyChoice">
+        <label for="funY">Choose an expression for y = `t`</label>
+        <input type="text" id="funXY-Y">
+
+        <label for="funX">Choose an expression for x = `t`</label>
+        <input type="text" id="funXY-X">
+
+        <label for="funT">Choose the max parameter t:</label>
+        <input type="range" min="1" max="10" value="2" id="funT">
+    </div>
+    
+    <div id="equationChoice">
+        <label for="funE">Choose a equation with x & y</label>
+        <input type="text" id="funE">
+
+        <label for="epsilon" id="epsilonLabel">Choose epsilon:</label>
+        <input type="range" min="0" max="1" value="0.1" step="0.05" id="epsilon">
+    </div>
+
+    <div style="display: flex; flex-direction: column;">
+        <canvas id="execCanvas" class="pixelated"></canvas>
+
+        <div>
+            <div id="codeAlgChoice">
+                <label for="codeAlg">Choose a code generation algorithm for dithered to g-code:</label>
+                <select name="codeAlg" id="codeAlg">
+                    <option value="Basic">Basic</option>
+                    <option value="Linear">Linear</option>
+                    <option value="Fritz">Fritz</option>
+                </select>
+            </div>
+
+            <button id="showCode">Show Code</button>
+            <pre id="g-info"></pre>
+            <pre id="g"></pre>
+        </div>
+    </div>
 </body>
 </html>
