@@ -7,6 +7,8 @@ const yChoice = document.querySelector('#yChoice')
 const xyChoice = document.querySelector('#xyChoice')
 const equationChoice = document.querySelector('#equationChoice')
 const codeAlgChoice = document.querySelector('#codeAlgChoice')
+const graphParameters = document.querySelector('#graphParameters')
+
 
 
 function choiceHandler() {
@@ -16,13 +18,14 @@ function choiceHandler() {
     xyChoice.style.display = 'none'
     equationChoice.style.display = 'none'
     codeAlgChoice.style.display = 'none'
+    graphParameters.style.display = 'none'
 
     switch (chose.value) {
         case 'imageChoice': imageChoice.style.display = 'block'; codeAlgChoice.style.display = 'block'; break;
         case 'textChoice': textChoice.style.display = 'block'; break;
-        case 'yChoice': yChoice.style.display = 'block'; break;
-        case 'xyChoice': xyChoice.style.display = 'block'; break;
-        case 'equationChoice': equationChoice.style.display = 'block'; break;
+        case 'yChoice': yChoice.style.display = 'block'; graphParameters.style.display = 'block'; break;
+        case 'xyChoice': xyChoice.style.display = 'block'; graphParameters.style.display = 'block'; break;
+        case 'equationChoice': equationChoice.style.display = 'block'; codeAlgChoice.style.display = 'block'; graphParameters.style.display = 'block'; break;
     
         default:
             throw `Invalid choice: ${chose.value}`
@@ -108,7 +111,7 @@ function drawImageContain(image, canvas, ctx) {
         const w = canvas.width
         const x = 0
 
-        const h = canvas.height * ir
+        const h = canvas.width / ir
         const y = (canvas.height - h) / 2  
 
         ctx.drawImage(image, 0, 0, image.width, image.height, x, y, w, h)
@@ -122,7 +125,7 @@ function drawImageCover(image, canvas, ctx) {
     if (ir > dr) {
         // source is wider
 
-        const w = canvas.height / ir
+        const w = canvas.height * ir
         const x = (canvas.width - w) / 2
 
         const h = canvas.height
@@ -135,7 +138,7 @@ function drawImageCover(image, canvas, ctx) {
         const w = canvas.width
         const x = 0
 
-        const h = canvas.width * ir
+        const h = canvas.width / ir
         const y = (canvas.height - h) / 2  
 
         ctx.drawImage(image, 0, 0, image.width, image.height, x, y, w, h)
@@ -686,7 +689,7 @@ codeAlg.addEventListener('change', codeAlgChange)
 let currCodeAlg = null
 function codeAlgChange() {
     currCodeAlg = codeAlg.value
-    if (input.files.length) generateCode()
+    generateCode()
 }
 
 codeAlgChange()
@@ -696,7 +699,7 @@ function updateExec() {
 
     execCtx.clearRect(0, 0, execCanvas.width, execCanvas.height)
     const len = currCode.split('\n').length
-    gInfo.innerHTML = `Code lengh: ${len}`
+    gInfo.innerHTML = `Number of commands: ${len}\nCode lengh: NOT_IMPLEMENTED`
     g.innerHTML = currCode
 
     const data = []
@@ -749,13 +752,13 @@ function updateExec() {
                 const dx = x2 - x1
                 const dy = y2 - y1
 
-                if (dy == 0) throw '0 Error'
-
-                // moves more on the y axis
-                for (let y = y1; y <= y2; y++) {
-                    x = Math.round(x2 - dx * (y2 - y) / dy)
-                    data[y * width + x] = 0
-                }
+                if (dy != 0) {
+                    // moves more on the y axis
+                    for (let y = y1; y <= y2; y++) {
+                        x = Math.round(x2 - dx * (y2 - y) / dy)
+                        data[y * width + x] = 0
+                    }
+                }                
             }
 
             pos = params
@@ -829,28 +832,41 @@ function updateExec() {
     execCtx.putImageData(src, 0, 0)
 }
 
-function drawCharAt(char, x, y) {
+function drawCharAt(char, x, y, scale = 1) {
     const data = font[char]
 
     if (!data) {
         console.error(`Invalid character: ${char} = ${char.charCodeAt(0)}`)
         return
     }
+
+    const s = n => Math.round(n * scale)
     
     data.lines.forEach(line => {
-        code.push(`M ${line[0][0] + x}, ${y - line[0][1]}`)
+        code.push(`M ${s(line[0][0]) + x}, ${y - s(line[0][1])}`)
         code.push(`P 0`)
 
         for (let i = 1; i < line.length; i++) {
             const [xx, yy] = line[i]
-            code.push(`M ${xx + x}, ${y - yy}`)
+            code.push(`M ${s(xx) + x}, ${y - s(yy)}`)
         }
 
         code.push(`P 1`)
     })
 }
 
-const textHeight = 30
+// let str = ''
+
+// for (let i = 32; i <= 126; i++) {
+//     str += String.fromCharCode(i)
+// }
+
+// console.log(str)
+
+//  !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
+
+const textHeight = 32
+
 function drawText(text) {
     code = ['M 0, 0', 'P 1']
     let dx = 0
@@ -875,7 +891,7 @@ function drawText(text) {
             h += textHeight
         }
         
-        drawCharAt(char, dx, h)
+        drawCharAt(char, dx, h, 1)
 
         dx += data.spacing
     })
@@ -915,15 +931,38 @@ function updateFunctions() {
     }
 }
 
-const startX = -10
-const centerX = 0
-const centerY = 0
-const resolution = 1 / 100
+
 
 const epsilon = document.querySelector('#epsilon')
 epsilon.addEventListener('input', updateFunctions)
 
 const epsilonLabel = document.querySelector('#epsilonLabel')
+
+function createFunction(...args) {
+    const funBody = `with (Math) { ${args.pop()} }`
+
+    const fun = new Function('noise', 'noiseSeed', ...args, funBody)
+
+    return (...args) => {
+        return fun(noise, noiseSeed, ...args)
+    }
+}
+
+const centerXInput = document.querySelector('#centerX')
+const centerYInput = document.querySelector('#centerY')
+const graphScale = document.querySelector('#graphScale')
+
+centerXInput.addEventListener('input', calculateFunction)
+centerYInput.addEventListener('input', calculateFunction)
+graphScale.addEventListener('input', calculateFunction)
+
+function setGraph(x, y, w) {
+    centerXInput.value = x
+    centerYInput.value = y
+    graphScale.value = w
+
+    calculateFunction()
+}
 
 function calculateFunction() {
     const data = []
@@ -953,8 +992,38 @@ function calculateFunction() {
         return Math.round(ret)
     }
 
-    // update data
-    const endX = (centerX - startX)
+    const code = ['P 1']
+    let down = false
+
+    function addPoint(x, y) {
+        if (isIn(x, y)) {
+            code.push(`M ${x}, ${y}`)
+
+            if (!down) {
+                code.push('P 0')
+                down = true
+            }
+        } else {
+            if (down) {
+                code.push('P 1')
+                down = false
+            }
+        }
+    }
+
+    // update data    
+    const centerX = Number(centerXInput.value)
+    const centerY = Number(centerYInput.value)
+    const scale = Number(graphScale.value)
+
+    if (isNaN(centerX) || isNaN(centerY) || isNaN(scale)) {
+        throw `Invalid graph parameters`
+    }
+
+    const resolution = 1 / 100
+
+    const startX = centerX - scale
+    const endX = centerX + scale
 
     const yLen = h / w * (endX - startX)
 
@@ -964,25 +1033,31 @@ function calculateFunction() {
     const minWH = w < h ? w : h
 
     // draw the x axis
-    const yPlane = map(startY, endY, 0, h, centerY)
+    const yPlane = map(endY, startY, 0, h, 0)
     for (let x = 0; x < width; x++) {
+        addPoint(x, yPlane)
         if (isIn(x, yPlane)) {
             data[yPlane * width + x] = 0
         }
     }
+    code.push('P 1')
+    down = false
 
-    // draw the x axis
-    const xPlane = map(startX, endX, 0, w, centerX)
+    // draw the y axis
+    const xPlane = map(startX, endX, 0, w, 0)
 
     for (let y = 0; y < h; y++) {
+        addPoint(xPlane, y)
         if (isIn(xPlane, y)) {
             data[y * width + xPlane] = 0
         }
     }
+    code.push('P 1')
+    down = false
 
     // draw the expression for y =
     function updateYFunction() {
-        const newFun = new Function(`x`, `return ${funY.value}`)
+        const newFun = createFunction(`x`, `return ${funY.value}`)
 
         for (let x = startX; x <= endX; x += resolution) {
             const y = newFun(x)
@@ -990,17 +1065,18 @@ function calculateFunction() {
             const xx = map(startX, endX, 0, w, x)
             const yy = map(startY, endY, 0, h, y)
 
-            if (isIn(xx, yy)) {
-                data[yy * width + xx] = 0
-            }
+            addPoint(xx, h - yy)
         }
+
+        currCode = code.join('\n')
+
+        updateExec()
     }
 
     // draw the expression for y = and x =
     function updateXYFunction() {
-
-        const newXFun = new Function(`t`, `return ${funXY_X.value}`)
-        const newYFun = new Function(`t`, `return ${funXY_Y.value}`)
+        const newXFun = createFunction(`t`, `return ${funXY_X.value}`)
+        const newYFun = createFunction(`t`, `return ${funXY_Y.value}`)
 
         for (let t = 0; t <= funT.value; t += resolution) {
             const y = newYFun(t)
@@ -1009,10 +1085,12 @@ function calculateFunction() {
             const xx = map(startX, endX, 0, w, x)
             const yy = map(startY, endY, 0, h, y)
 
-            if (isIn(xx, yy)) {
-                data[yy * width + xx] = 0
-            }
+            addPoint(xx, h - yy)
         }
+
+        currCode = code.join('\n')
+
+        updateExec()
     }
 
     // draw the queation with x & y
@@ -1027,20 +1105,34 @@ function calculateFunction() {
         }
 
 
-        const newFun = new Function(`x`, 'y', `return ${funBody}`)
+        const newFun = createFunction(`x`, 'y', `return ${funBody}`)
 
-        for (let x = startX; x <= endX; x += 1 / 32) {
+        for (let x = startX; x <= endX; x += 1 / 16) {
             for (let y = Math.floor(startY); y <= endY; y += 1 / 32) {
                 const satisfiesEquation = newFun(x, y)
                 
                 const xx = map(startX, endX, 0, w, x)
-                const yy = map(startY, endY, 0, h, y)
+                const yy = h - map(startY, endY, 0, h, y)
     
                 if (satisfiesEquation && isIn(xx, yy)) {
                     data[yy * width + xx] = 0
                 }
             }
         }
+
+        // put memory back into dotCtx to generate code
+        const src = dotCtx.getImageData(0, 0, imageCanvas.width, imageCanvas.height)
+
+        for (let i = 0; i < src.data.length; i++) {
+            src.data[i * 4 + 0] = data[i]
+            src.data[i * 4 + 1] = data[i]
+            src.data[i * 4 + 2] = data[i]
+            src.data[i * 4 + 3] = 255
+        }
+
+        dotCtx.putImageData(src, 0, 0)
+
+        generateCode()
     }
 
     if (chose.value == 'xyChoice') {
@@ -1052,17 +1144,6 @@ function calculateFunction() {
     } else {
         console.error('El giüst?')
     }
-
-    // TODO: should not draw in memory but should generate code and run simulation
-    // put memory back to image
-    const src = execCtx.getImageData(0, 0, imageCanvas.width, imageCanvas.height)
-
-    for (let i = 0; i < src.data.length; i++) {
-        src.data[i * 4 + 0] = data[i]
-        src.data[i * 4 + 1] = data[i]
-        src.data[i * 4 + 2] = data[i]
-        src.data[i * 4 + 3] = 255
-    }
-
-    execCtx.putImageData(src, 0, 0)
 }
+
+drawText(` !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_\`abcdefghijklmnopqrstuvwxyz{|}~`)

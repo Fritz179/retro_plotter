@@ -10,12 +10,13 @@
 </head>
 <body>
     <script src="./font.js" defer></script>
+    <script src="./noise.js" defer></script>
     <script src="./main.js" defer></script>
 
     <label for="chose">Choose what to do:</label>
     <select name="chose" id="chose">
-        <option value="imageChoice">Picture</option>
         <option value="textChoice">Text</option>
+        <option value="imageChoice">Picture</option>
         <option value="yChoice">Y-Function</option>
         <option value="xyChoice">X&Y-Functions</option>
         <option value="equationChoice">X&Y-Equation</option>
@@ -88,25 +89,103 @@
     <div id="yChoice">
         <label for="funY">Choose an expression for y = `x`</label>
         <input type="text" id="funY">
+
+        <br>
+
+        <label for="presetY">Choose a preset:</label>
+        <select name="presetY" id="presetY" onclick="
+            const inputY = document.querySelector('#funY')
+
+            switch (this.value) {
+                case 'None': setGraph(0, 0, 10); break;
+
+                default:
+                    throw `Invalid value: ${this.value}`;
+            }
+
+            updateFunctions()
+        ">
+            <option value="None">None</option>
+        </select>
     </div>
 
     <div id="xyChoice">
         <label for="funY">Choose an expression for y = `t`</label>
         <input type="text" id="funXY-Y">
 
+        <br>
+
         <label for="funX">Choose an expression for x = `t`</label>
         <input type="text" id="funXY-X">
 
+        <br>
+
         <label for="funT">Choose the max parameter t:</label>
         <input type="range" min="1" max="10" value="2" id="funT">
+
+        <br>
+
+        <label for="presetXY">Choose a preset:</label>
+        <select name="presetXY" id="presetXY" onclick="
+            const inputXY_X = document.querySelector('#funXY_X')
+            const inputXY_Y = document.querySelector('#funXY_Y')
+
+            switch (this.value) {
+                case 'None': setGraph(0, 0, 10); break;
+
+                default:
+                    throw `Invalid value: ${this.value}`;
+            }
+
+            updateFunctions()
+        ">
+            <option value="None">None</option>
+        </select>
     </div>
     
     <div id="equationChoice">
         <label for="funE">Choose a equation with x & y</label>
         <input type="text" id="funE">
 
+        <br>
+
         <label for="epsilon" id="epsilonLabel">Choose epsilon:</label>
         <input type="range" min="0" max="1" value="0.1" step="0.05" id="epsilon">
+
+        <br>
+
+        <label for="presetE">Choose a preset:</label>
+        <select name="presetE" id="presetE" onclick="
+            const inputE = document.querySelector('#funE')
+
+            switch (this.value) {
+                case 'None': setGraph(0, 0, 10); break;
+                case 'Noise': inputE.value = 'noise(x, y) > 0.5'; setGraph(-100, -100, 10); break;
+
+                default:
+                    throw `Invalid value: ${this.value}`;
+            }
+
+            updateFunctions()
+        ">
+            <option value="None">None</option>
+            <option value="Noise">Noise</option>
+        </select>
+    </div>
+
+    <div id="graphParameters">
+        <label for="centerX">Choose a centerX</label>
+        <input type="text" id="centerX" value="0">
+
+        <br>
+
+        <label for="centerY">Choose a centerY</label>
+        <input type="text" id="centerY" value="0">
+
+        <br>
+
+        <label for="graphScale">Choose a graphScale</label>
+        <input type="text" id="graphScale" value="10">
     </div>
 
     <div style="display: flex; flex-direction: column;">
@@ -114,7 +193,7 @@
 
         <div>
             <div id="codeAlgChoice">
-                <label for="codeAlg">Choose a code generation algorithm for dithered to g-code:</label>
+                <label for="codeAlg">Choose a generation algorithm for g-code:</label>
                 <select name="codeAlg" id="codeAlg">
                     <option value="Basic">Basic</option>
                     <option value="Linear">Linear</option>
