@@ -1,0 +1,5 @@
+Links:
+Font: http://paulbourke.net/dataformats/hershey/
+Dither: https://en.wikipedia.org/wiki/Dither
+Color space conversion: https://gist.github.com/mjackson/5311256
+Perlin noise: https://github.com/processing/p5.js/blob/v1.5.0/src/math/noise.js#L36
