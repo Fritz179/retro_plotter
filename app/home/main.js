@@ -157,6 +157,63 @@ function updateIamge() {
     imageCtx.clearRect(0, 0, imageCanvas.width, imageCanvas.height)
     drawImageContain(image, imageCanvas, imageCtx)
 
+    updateGray()
+}
+
+
+function rgbToHsl(r, g, b) {
+  r /= 255, g /= 255, b /= 255;
+
+  var max = Math.max(r, g, b), min = Math.min(r, g, b);
+  var h, s, l = (max + min) / 2;
+
+  if (max == min) {
+    h = s = 0; // achromatic
+  } else {
+    var d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+
+    h /= 6;
+  }
+
+  return [ h, s, l ];
+}
+
+
+function rgbToHsv(r, g, b) {
+  r /= 255, g /= 255, b /= 255;
+
+  var max = Math.max(r, g, b), min = Math.min(r, g, b);
+  var h, s, v = max;
+
+  var d = max - min;
+  s = max == 0 ? 0 : d / max;
+
+  if (max == min) {
+    h = 0; // achromatic
+  } else {
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+
+    h /= 6;
+  }
+
+  return [ h, s, v ];
+}
+
+const grayAlg = document.querySelector('#grayAlg')
+grayAlg.addEventListener('input', updateGray)
+
+function updateGray() {
     const currScaleAlg = scaleAlg.value
 
     grayCtx.clearRect(0, 0, grayCanvas.width, grayCanvas.height)
@@ -170,21 +227,21 @@ function updateIamge() {
             throw 'Unkonwn alg'
     }
 
-    
-
-    updateGray()
-}
-
-function updateGray() {
     const src = grayCtx.getImageData(0, 0, imageCanvas.width, imageCanvas.height)
     const data = src.data
+
+    const grayFunction = createFunction('r', 'g', 'b', 'hsv_h', 'hsv_s', 'hsv_v', 'hsl_h', 'hsl_s', 'hsl_l', `return ${grayAlg.value}`)
     
     for (let i = 0; i < data.length; i += 4) {
         const r = data[i + 0]
         const g = data[i + 1]
         const b = data[i + 2]
 
-        const gray = Math.round((r + g + b) / 3)
+        // const gray = Math.round((r + g + b) / 3)
+        const [hsv_h, hsv_s, hsv_v] = rgbToHsv(r, g, b)
+        const [hsl_h, hsl_s, hsl_l] = rgbToHsl(r, g, b)
+
+        const gray = grayFunction(r / 255, g / 255, b / 255, hsv_h, hsv_s, hsv_v, hsl_h, hsl_s, hsl_l) * 255
 
         data[i + 0] = gray
         data[i + 1] = gray
@@ -662,11 +719,11 @@ function generateLinear(points) {
 function generateFritz(points) {
     let code = 'P 1\nM 0, 0\n'
 
-    for (point of points) {
-        code += `M ${point[0]}, ${point[1]}\n`
-        code += 'P 0\n'
-        code += 'P 1\n'
-    }
+    // for (point of points) {
+    //     code += `M ${point[0]}, ${point[1]}\n`
+    //     code += 'P 0\n'
+    //     code += 'P 1\n'
+    // }
 
     return code
 }
@@ -939,7 +996,7 @@ epsilon.addEventListener('input', updateFunctions)
 const epsilonLabel = document.querySelector('#epsilonLabel')
 
 function createFunction(...args) {
-    const funBody = `with (Math) { ${args.pop()} }`
+    const funBody = `${args.pop()}`
 
     const fun = new Function('noise', 'noiseSeed', ...args, funBody)
 
