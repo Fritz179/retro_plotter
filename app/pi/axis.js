@@ -1,7 +1,7 @@
-const pigpio = require('pigpio')
-const Gpio = pigpio.Gpio;
+const Gpio = require('pigpio').Gpio;
 
-const error = require('./error.js')
+const assert = require('./assert.js')
+const {pulsePin} = require('./pulse.js')
 
 const steppingMS = {
     1:  [0, 0, 0],
@@ -9,14 +9,6 @@ const steppingMS = {
     4:  [0, 1, 0],
     8:  [1, 1, 0],
     16: [1, 1, 1],
-}
-
-function getPinSet(pin, value, delay = 1000) {
-    if (value) {
-        return waveform.push({ gpioOn: pin, gpioOff: 0, usDelay: delay });
-    } else {
-        return waveform.push({ gpioOn: 0, gpioOff: pin, usDelay: delay });
-    }
 }
 
 const EMI_REPEAT = 3
@@ -45,23 +37,32 @@ class Axis {
         this.endPosition = endPosition
     }
 
-    *setDirection(direction, delay = 1000) {
-        if (direction != -1 || direction != 1) error(`Invalid direction: ${direction}`)
+    pulsePositiveDirection(delay) {
+        return pulsePin(this.dirPin, !this.invertDir, delay)
+    }
+
+    pulseNegativeDirection(delay) {
+        return pulsePin(this.dirPin, this.invertDir, delay)
+    }
+
+    *genPulseDirection(direction, delay = () => 1000) {
+        assert(direction == -1 || direction == 1 || direction == 0, `Invalid direction: ${direction}`)
+
+        if (direction == 0) return
 
         if (direction == this.lastDirection) return
-
         this.lastDirection = direction
-        const positive = direction == 1
-
-
-        yield getPinSet(this.dirPin, this.invertDir ? !positive : positive, delay)
+        
+        if (direction == 1) {
+            yield this.pulsePositiveDirection(delay)
+        } else {
+            yield this.pulseNegativeDirection(delay)
+        }
     }
 
     setMS(speed) {
         const data = steppingMS[speed]
-        if (!data) {
-            error('Invalid MS speed: ' + speed)
-        }
+        assert(data, 'Invalid MS speed: ' + speed)
 
         this.ms1.digitalWrite(data[0])
         this.ms2.digitalWrite(data[1])
@@ -161,8 +162,20 @@ function setCallback(fn) {
     callback = fn
 }
 
+function setMS(n) {
+    x.setMS(n)
+    y.setMS(n)
+}
+
+function* genPulseDirection(xp, yp) {
+    yield* x.genPulseDirection(xp)
+    yield* y.genPulseDirection(yp)
+}
+
 module.exports = {
     x,
     y,
-    setCallback
+    setCallback,
+    setMS,
+    genPulseDirection
 }
