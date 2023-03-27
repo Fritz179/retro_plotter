@@ -2,6 +2,7 @@ const pigpio = require('pigpio')
 const axis = require('./axis.js')
 
 const targetDelay = 1000 * 1000
+const targetSize = 1000
 
 let lastId = null
 let deleteId = null
@@ -16,13 +17,13 @@ function createWave() {
         data.push(next.value)
         time += next.value.usDelay
 
-        if (time > targetDelay) break
-        if (data.length > 10000) break
+        if (time >= targetDelay) break
+        if (data.length >= targetSize) break
     }
 
-    console.log(time, data.length)
+    // TODO: Pad stoppable
+    // while (data.lemgth)
 
-    pigpio.waveClear();
     pigpio.waveAddGeneric(data);
 
     const position = {
@@ -31,8 +32,9 @@ function createWave() {
     }
 
     sendMessage('position', JSON.stringify(position))
+
     const waveId = pigpio.waveCreate();
-    // console.log(`Created wave: ${waveId}, length: ${data.length}, time: ${time}`)
+    console.log(`Created wave: ${waveId}, length: ${data.length}, time: ${time}`)
 
     return waveId
 }
@@ -42,8 +44,10 @@ function sendWave() {
     if (typeof waveId != 'number') return
 
     if (pigpio.waveTxBusy()) {
+        console.log('Sending wave as SYNC')
         pigpio.waveTxSend(waveId, pigpio.WAVE_MODE_ONE_SHOT_SYNC)
     } else {
+        console.log('Sending wave as SHOT')
         pigpio.waveTxSend(waveId, pigpio.WAVE_MODE_ONE_SHOT)
     }
 
@@ -59,20 +63,20 @@ function sendWave() {
 function consume() {
     try {
         if (!pigpio.waveTxBusy()) {
-            pigpio.waveClear()
             sendWave()
             return
         }
     
         if (pigpio.waveTxAt() == lastId) {
-            // sendWave()
+            console.log(lastId)
+            sendWave()
         }
     } catch(e) {
         // Ignore this error
-        if (e.message == 'pigpio error 9999 in gpioWaveTxAt' || e.message == 'pigpio error 9998 in gpioWaveTxAt') {
-            // console.log(e.message)
-            return
-        }
+        // if (e.message == 'pigpio error 9999 in gpioWaveTxAt' || e.message == 'pigpio error 9998 in gpioWaveTxAt') {
+        //     console.log(e.message)
+        //     return
+        // }
 
         console.error('Consume error')
         console.log(e.message)
@@ -84,9 +88,10 @@ function consume() {
     }
 }
 
-setInterval(consume)
+setInterval(consume, 10)
 
-const empty = { gpioOn: 0, gpioOff: 0, usDelay: targetDelay + 1 }
+const empty = { gpioOn: 0, gpioOff: 0, usDelay: 0 }
+const breakable = { gpioOn: 0, gpioOff: 0, usDelay: 0 }
 function* emptyGenerator() {
     while (true) {
         yield empty
@@ -108,5 +113,6 @@ function setMessager(msgr) {
 module.exports = {
     setGenerator,
     empty,
+    breakable,
     setMessager
 }
