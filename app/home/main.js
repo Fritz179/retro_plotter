@@ -1018,8 +1018,10 @@ gcodeinput.addEventListener('input', () => {
 })
 
 const gcodeSend = document.querySelector('#gcodeSend')
-gcodeSend.onclick = gcodeListener
-function gcodeListener() {
+gcodeSend.onclick = () => gcodeListener()
+function gcodeListener(code) {
+    if (code) sendableCode = code
+
     if (!sendableCode) {
         alert('No sendable code')
         return
@@ -1029,6 +1031,14 @@ function gcodeListener() {
 
     socket.emit('draw', sendableCode)
 }
+
+const manualUp = document.querySelector('#manual-penup')
+const manualDown = document.querySelector('#manual-pendown')
+const manualPaper = document.querySelector('#manual-paper')
+
+manualUp.onclick = () => gcodeListener('P 1')
+manualDown.onclick = () => gcodeListener('P 0')
+manualPaper.onclick = () => gcodeListener('P 1\nD 500\nM 8000, 20')
 
 const funY = document.querySelector('#funY')
 const funXY_X = document.querySelector('#funXY-X')
