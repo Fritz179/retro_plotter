@@ -74,7 +74,9 @@ function* combineGenerators(...generators) {
 
 function* moveByAxis(n, pin, delay = () => 1000) {
     for (let i = 0; i < n; i++) {
-        let time = Math.round(delay(i / n))
+        let time = Math.round(delay(i + 1, n))
+
+        if (time <= 0) throw 'Invalid time'
 
         const on  = { gpioOn: pin, gpioOff: 0, usDelay: time }
         const off = { gpioOn: 0, gpioOff: pin, usDelay: time }
@@ -92,8 +94,10 @@ function* moveBy(x, y, delay = () => 1000) {
     if (xEvery < 1) xEvery = 1
     if (yEvery < 1) yEvery = 1
 
-    const xGenerator = moveByAxis(x, axis.x.stepPin, n => delay(n) * xEvery)
-    const yGenerator = moveByAxis(y, axis.y.stepPin, n => delay(n) * yEvery)
+    let len = Math.sqrt(x*x + y*y)
+
+    const xGenerator = moveByAxis(x, axis.x.stepPin, (n, t) => delay(n / t * len, len) * xEvery)
+    const yGenerator = moveByAxis(y, axis.y.stepPin, (n, t) => delay(n / t * len, len) * yEvery)
 
     yield* combineGenerators(xGenerator, yGenerator)
 }
@@ -158,11 +162,17 @@ function* drawGnerator() {
         }
 
         console.log(`parsing action: ${type}, values: ${values}`)
+
+        function constAccDealy(baseDelay) {
+            return (n, i) => {
+                return baseDelay
+            }
+        }
         
         switch (type) {
             case 'M':
                 assertLen(2)
-                yield* goTo(...values, () => params.delay)
+                yield* goTo(...values, constAccDealy(params.delay))
                 break;
 
             case 'm':
@@ -170,7 +180,7 @@ function* drawGnerator() {
                 const x = axis.x.position + values[0]
                 const y = axis.y.position + values[1]
 
-                yield* goTo(x, y, () => params.delay)
+                yield* goTo(x, y, constAccDealy(params.delay))
                 break;
 
             case 'D':
@@ -205,7 +215,7 @@ function parseActions(text) {
 function draw(text) {
     axis.setCallback(axis => {
         console.log(`Endschalter reached!! ${axis}`)
-        error(axis)
+        assert(false, axis)
     })
 
     parseActions(text)

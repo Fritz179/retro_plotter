@@ -153,6 +153,10 @@ function calibrateSyncDiagonal(delay = 200) {
 function calibrateSync(delay = 200) {
     console.log('Calibration started: ' + delay)
 
+    // reset everithing else
+    pigpio.waveTxStop()
+    pigpio.waveClear()
+
     // Pen up
     penPin.digitalWrite(0)
     
@@ -231,7 +235,7 @@ function calibrateSync(delay = 200) {
 
     // calibrate again with more precision
     if (delay != 1000) {
-        // calibrateSync(1000)
+        // calibrateSync(1000)  
         console.log('Deleteme')
     }
 }

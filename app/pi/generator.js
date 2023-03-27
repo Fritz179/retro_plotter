@@ -13,6 +13,11 @@ function createWave() {
     
     while (true) {
         let next = generator.next()
+
+        if (next.value == empty) break
+
+        // always create a CB for the delay so that the wave can reuse an old one
+        if (!next.value.usDelay) next.value.usDelay = 1
         
         data.push(next.value)
         time += next.value.usDelay
@@ -22,7 +27,9 @@ function createWave() {
     }
 
     // TODO: Pad stoppable
-    // while (data.lemgth)
+    while (data.length < targetSize) {
+        data.push(empty)
+    }
 
     pigpio.waveAddGeneric(data);
 
@@ -33,8 +40,15 @@ function createWave() {
 
     sendMessage('position', JSON.stringify(position))
 
+    const Cbs = pigpio.waveGetCbs()
+    const pulses = pigpio.waveGetPulses()
+
     const waveId = pigpio.waveCreate();
-    console.log(`Created wave: ${waveId}, length: ${data.length}, time: ${time}`)
+
+    if (time != 0) {
+        console.log(`Created wave: ${waveId}, length: ${data.length}, time: ${time}, Cbs: ${Cbs}, Pulses: ${pulses}`)
+    }
+    
 
     return waveId
 }
@@ -44,10 +58,10 @@ function sendWave() {
     if (typeof waveId != 'number') return
 
     if (pigpio.waveTxBusy()) {
-        console.log('Sending wave as SYNC')
+        // console.log('Sending wave as SYNC')
         pigpio.waveTxSend(waveId, pigpio.WAVE_MODE_ONE_SHOT_SYNC)
     } else {
-        console.log('Sending wave as SHOT')
+        // console.log('Sending wave as SHOT')
         pigpio.waveTxSend(waveId, pigpio.WAVE_MODE_ONE_SHOT)
     }
 
@@ -68,12 +82,11 @@ function consume() {
         }
     
         if (pigpio.waveTxAt() == lastId) {
-            console.log(lastId)
             sendWave()
         }
     } catch(e) {
         // Ignore this error
-        // if (e.message == 'pigpio error 9999 in gpioWaveTxAt' || e.message == 'pigpio error 9998 in gpioWaveTxAt') {
+        // if (e.message == 'pigpio error 9999 in gpioWaveTxAt') {
         //     console.log(e.message)
         //     return
         // }
