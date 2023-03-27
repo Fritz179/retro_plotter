@@ -11,11 +11,15 @@
 <body>
     <script src="./font.js" defer></script>
     <script src="./noise.js" defer></script>
+    <script src="/socket.io/socket.io.js"></script>
     <script src="./main.js" defer></script>
+
+    <pre id="position">Unknown plotter postion</pre>
 
     <label for="chose">Choose what to do:</label>
     <select name="chose" id="chose">
         <option value="textChoice">Text</option>
+        <option value="gcodeChoice">Manual</option>
         <option value="imageChoice">Picture</option>
         <option value="yChoice">Y-Function</option>
         <option value="xyChoice">X&Y-Functions</option>
@@ -84,6 +88,11 @@
 
             <canvas id="dotCanvas" class="pixelated"></canvas>
         </div>
+    </div>
+
+    <div id="gcodeChoice">
+        <label for="gcode">Please insert the g-code:</label>
+        <textarea name="gcode" id="gcode" cols="20" rows="2"></textarea>
     </div>
 
     <div id="textChoice">
@@ -209,6 +218,13 @@
             <button id="showCode">Show Code</button>
             <pre id="g-info"></pre>
             <pre id="g"></pre>
+
+            <br>
+
+            <label for="delay">Choose a delay (1 / speed):</label>
+            <input type="text" value="500" id="delay"> <br>
+            <button id="gcodeSend">Send g-code!</button>
+            
         </div>
     </div>
 </body>

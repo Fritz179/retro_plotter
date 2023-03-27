@@ -1,19 +1,35 @@
+const socket = io();
+const mm = 80
+const maxWidth = 210 * mm
+const maxHeight = 197 * mm
+
+const position = document.querySelector('#position')
+socket.on('position', data => {
+    const d = JSON.parse(data)
+
+    position.innerHTML = `X: ${Math.round(d.x).toString().padEnd(5)}, Y: ${Math.round(d.y).toString().padEnd(5)}`
+})
+
+socket.on('alert', info => {
+    alert(info)
+})
+
 const chose = document.querySelector('#chose')
 chose.addEventListener('input', choiceHandler)
 
 const imageChoice = document.querySelector('#imageChoice')
 const textChoice = document.querySelector('#textChoice')
+const gcodeChoice = document.querySelector('#gcodeChoice')
 const yChoice = document.querySelector('#yChoice')
 const xyChoice = document.querySelector('#xyChoice')
 const equationChoice = document.querySelector('#equationChoice')
 const codeAlgChoice = document.querySelector('#codeAlgChoice')
 const graphParameters = document.querySelector('#graphParameters')
 
-
-
 function choiceHandler() {
     imageChoice.style.display = 'none'
     textChoice.style.display = 'none'
+    gcodeChoice.style.display = 'none'
     yChoice.style.display = 'none'
     xyChoice.style.display = 'none'
     equationChoice.style.display = 'none'
@@ -23,6 +39,7 @@ function choiceHandler() {
     switch (chose.value) {
         case 'imageChoice': imageChoice.style.display = 'block'; codeAlgChoice.style.display = 'block'; break;
         case 'textChoice': textChoice.style.display = 'block'; break;
+        case 'gcodeChoice': gcodeChoice.style.display = 'block'; break;
         case 'yChoice': yChoice.style.display = 'block'; graphParameters.style.display = 'block'; break;
         case 'xyChoice': xyChoice.style.display = 'block'; graphParameters.style.display = 'block'; break;
         case 'equationChoice': equationChoice.style.display = 'block'; codeAlgChoice.style.display = 'block'; graphParameters.style.display = 'block'; break;
@@ -31,6 +48,9 @@ function choiceHandler() {
             throw `Invalid choice: ${chose.value}`
     }
 }
+
+const usDelay = document.getElementById('delay')
+usDelay.addEventListener('input', updateExec)
 
 choiceHandler()
 
@@ -76,7 +96,6 @@ const [imageCanvas, imageCtx] = getCanvas('#imageCanvas');
 const [grayCanvas, grayCtx] = getCanvas('#grayCanvas');
 const [dotCanvas, dotCtx] = getCanvas('#dotCanvas');
 const [execCanvas, execCtx] = getCanvas('#execCanvas');
-
 
 input.addEventListener('change', updateImage);
 function updateImage() {
@@ -641,7 +660,7 @@ function ditherFritz(get, set, add, isIn) {
 
 const g = document.querySelector('#g')
 const gInfo = document.querySelector('#g-info')
-let currCode
+let currCode, sendableCode
 
 function generateCode() {
     const src = dotCtx.getImageData(0, 0, imageCanvas.width, imageCanvas.height)
@@ -677,7 +696,7 @@ function generateCode() {
 }
 
 function generateBasic(points) {
-    let code = 'P 1\nM 0, 0\n'
+    let code = 'P 1\n'
 
     for (point of points) {
         code += `M ${point[0]}, ${point[1]}\n`
@@ -689,7 +708,7 @@ function generateBasic(points) {
 }
 
 function generateLinear(points) {
-    let code = ['P 1', 'M 0, 0']
+    let code = ['P 1']
     
     let prevX
     let wasSame = false
@@ -717,15 +736,11 @@ function generateLinear(points) {
 }
 
 function generateFritz(points) {
-    let code = 'P 1\nM 0, 0\n'
+    let code = 'P 1\n'
 
-    // for (point of points) {
-    //     code += `M ${point[0]}, ${point[1]}\n`
-    //     code += 'P 0\n'
-    //     code += 'P 1\n'
-    // }
+    return generateLinear(points)
 
-    return code
+    // return code
 }
 
 let active = false
@@ -754,6 +769,12 @@ codeAlgChange()
 function updateExec() {
     if (!currCode) return
 
+    const delay = Number(usDelay.value)
+    if (typeof delay != 'number' || delay == NaN) delay = 500
+    sendableCode = ['P 1', `D ${delay}`]
+
+    console.log(delay)
+
     execCtx.clearRect(0, 0, execCanvas.width, execCanvas.height)
     const len = currCode.split('\n').length
     gInfo.innerHTML = `Number of commands: ${len}\nCode lengh: NOT_IMPLEMENTED`
@@ -761,6 +782,7 @@ function updateExec() {
 
     const data = []
     const width = execCanvas.width
+    const height = execCanvas.height
 
     for (let y = 0; y < execCanvas.height; y++) {
         for (let x = 0; x < width; x++) {
@@ -822,7 +844,13 @@ function updateExec() {
         }
 
         function moveTo() {
+            const spacing = 10
             assert(2)
+
+            const x = (params[0] / width * (width - spacing * 2) + spacing) * mm
+            const y = (params[1] / height * (height - spacing * 2) + spacing * 2) * mm
+
+            sendableCode.push(`M ${Math.round(x)}, ${Math.round(y)}`)
             if (pointing) {
                 lineTo()
             } else {
@@ -830,11 +858,20 @@ function updateExec() {
             }
         }
 
-        function point() {
+        function pen() {
             assert(1)
             pointing = params[0] == 0
             if (pointing) data[pos[1] * width + pos[0]] = 0
+
+            sendableCode.push(`P ${params[0]}`)
         }
+
+        function delay() {
+            assert(1)
+
+            sendableCode.push(`D ${params[0]}`)
+        }
+
 
         function cubicBaiser() {
             throw 'Not implemented: cubicBaiser'
@@ -865,10 +902,11 @@ function updateExec() {
         }
 
         switch (type) {
-            case 'P': point(); break;
+            case 'P': pen(); break;
             case 'M': moveTo(); break;
-            case 'C': cubicBaiser(); break;
-            case 'Q': quadraticBaiser(); break;
+            case 'D': delay(); break;
+            // case 'C': cubicBaiser(); break;
+            // case 'Q': quadraticBaiser(); break;
         
             default:
                 console.log(code, index)
@@ -887,6 +925,8 @@ function updateExec() {
     }
 
     execCtx.putImageData(src, 0, 0)
+
+    sendableCode = sendableCode.join('\n')
 }
 
 function drawCharAt(char, x, y, scale = 1) {
@@ -925,7 +965,7 @@ function drawCharAt(char, x, y, scale = 1) {
 const textHeight = 32
 
 function drawText(text) {
-    code = ['M 0, 0', 'P 1']
+    code = ['P 1']
     let dx = 0
     let h = textHeight
 
@@ -964,8 +1004,31 @@ function textListener() {
     drawText(text.value)
 }
 
-currCode = 'M 10 80\nQ 95 10 180 30'
-updateExec()
+const gcodeinput = document.querySelector('#gcode')
+
+gcodeinput.addEventListener('input', () => {
+    console.log(gcodeinput.value)
+    try {
+        currCode = gcodeinput.value
+        updateExec()
+    } catch(e) {
+        console.error(e)
+        drawText(e.toString())
+    }
+})
+
+const gcodeSend = document.querySelector('#gcodeSend')
+gcodeSend.onclick = gcodeListener
+function gcodeListener() {
+    if (!sendableCode) {
+        alert('No sendable code')
+        return
+    }
+
+    console.log('Sending code', sendableCode)
+
+    socket.emit('draw', sendableCode)
+}
 
 const funY = document.querySelector('#funY')
 const funXY_X = document.querySelector('#funXY-X')
