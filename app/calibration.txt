@@ -1,0 +1,74 @@
+goUntilEndAndLog(500, -1, 0)
+while (true) {
+    console.log('x axis')
+    goUntilEndAndLog(500,  1, 0)
+    goUntilEndAndLog(500, -1, 0)
+}
+
+-1 0 1010
+x axis
+1 0 16160
+-1 0 16159
+x axis
+1 0 16157
+-1 0 16155
+x axis
+1 0 16157
+-1 0 16155
+x axis
+1 0 16154
+-1 0 16153
+x axis
+1 0 16151
+-1 0 16153
+x axis
+1 0 16154
+-1 0 16153
+x axis
+1 0 16156
+-1 0 16153
+x axis
+1 0 16149
+-1 0 16152
+x axis
+1 0 16165
+-1 0 16166
+x axis
+1 0 16157
+-1 0 16163
+
+= 202 mm
+
+
+
+
+goUntilEndAndLog(500, 0, -1)
+while (true) {
+    console.log('y axis')
+    goUntilEndAndLog(500, 0,  1)
+    goUntilEndAndLog(500, 0, -1)
+}
+
+0 -1 1010
+y axis
+0 1 25290
+0 -1 25281
+y axis
+0 1 25277
+0 -1 25278
+y axis
+0 1 25278
+0 -1 25278
+y axis
+0 1 25277
+0 -1 25261
+y axis
+0 1 25271
+0 -1 25279
+
+=  319 mm
+
+//
+
+X => 16160 / 202 = 80 step/mm
+Y => 25278 / 319 = 79.24 step/mm

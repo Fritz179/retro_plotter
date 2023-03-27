@@ -64,6 +64,7 @@ class Axis {
         const data = steppingMS[speed]
         assert(data, 'Invalid MS speed: ' + speed)
 
+        this.ms = speed
         this.ms1.digitalWrite(data[0])
         this.ms2.digitalWrite(data[1])
         this.ms3.digitalWrite(data[2])

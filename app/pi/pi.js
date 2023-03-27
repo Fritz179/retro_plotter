@@ -1,10 +1,23 @@
 const assert = require('./assert.js')
 
 // Perform syncronous calibration
-const calibrateSync = require('./calibrate.js')
+const {calibrateSync, goUntilEndAndLog} = require('./calibrate.js')
 calibrateSync()
 
-const {setGenerator, empty} = require('./generator.js')
+// while (true) {
+//     console.log('x axis')
+//     goUntilEndAndLog(500,  1, 0)
+//     goUntilEndAndLog(500, -1, 0)
+// }
+
+// goUntilEndAndLog(500, 0, -1)
+// while (true) {
+//     console.log('y axis')
+//     goUntilEndAndLog(500, 0,  1)
+//     goUntilEndAndLog(500, 0, -1)
+// }
+
+const {setGenerator, empty, setMessager: setGeneratorMessager} = require('./generator.js')
 
 //////////////
 
@@ -73,8 +86,11 @@ function* moveByAxis(n, pin, delay = () => 1000) {
 function* moveBy(x, y, delay = () => 1000) {
     assert(x >= 0 && y >= 0, `Invalid moveBy, x: ${x}, y: ${y}`)
 
-    let xEvery = y ? y / x : 1
-    let yEvery = x ? x / y : 1
+    let xEvery = y / x
+    let yEvery = x / y
+
+    if (xEvery < 1) xEvery = 1
+    if (yEvery < 1) yEvery = 1
 
     const xGenerator = moveByAxis(x, axis.x.stepPin, n => delay(n) * xEvery)
     const yGenerator = moveByAxis(y, axis.y.stepPin, n => delay(n) * yEvery)
@@ -99,12 +115,12 @@ function* goTo(x, y, delay = () => 1000) {
 }
 
 function* penUp() {
-    const action = { gpioOn: 0, gpioOff: 19, usDelay: 1000 }
+    const action = { gpioOn: 0, gpioOff: 19, usDelay: 1000 * 50 }
     yield action
 }
 
 function* penDown() {
-    const action = { gpioOn: 19, gpioOff: 0, usDelay: 1000 }
+    const action = { gpioOn: 19, gpioOff: 0, usDelay: 1000 * 50}
     yield action
 }
 
@@ -187,12 +203,26 @@ function parseActions(text) {
 }
 
 function draw(text) {
+    axis.setCallback(axis => {
+        console.log(`Endschalter reached!! ${axis}`)
+        error(axis)
+    })
+
     parseActions(text)
     setGenerator(drawGnerator())
 }
 
+let sendMessage = () => {}
+
+function setMessager(msger) {
+    sendMessage = msger
+
+    setGeneratorMessager(msger)
+}
+
 module.exports = {
-    draw
+    draw,
+    setMessager
 }
 
 // pulse => return a pulse
