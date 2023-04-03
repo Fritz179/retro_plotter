@@ -6,6 +6,7 @@ require('./setup/express.js')(app, __dirname);
 
 // socket
 const { Server } = require("socket.io");
+const { calibrateSync } = require('./pi/calibrate.js');
 
 // connect the raspberry
 const {draw, setMessager} = require('./pi/pi.js')
@@ -40,7 +41,12 @@ io.on('connection', (socket) => {
         draw(code)
     })
 
+    socket.on('recalibrate', () => {
+        calibrateSync()
+    })
+
     socket.on('disconnect', () => {
         console.log('Socket connection terminated');
-      });
+    });
+
 });

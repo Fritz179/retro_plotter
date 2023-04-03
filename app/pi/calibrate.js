@@ -150,12 +150,15 @@ function calibrateSyncDiagonal(delay = 200) {
     }
 }
 
+const {clearGenerator} = require('./generator.js')
 function calibrateSync(delay = 200) {
     console.log('Calibration started: ' + delay)
 
     // reset everithing else
     pigpio.waveTxStop()
     pigpio.waveClear()
+    clearGenerator()
+    
 
     // Pen up
     penPin.digitalWrite(0)

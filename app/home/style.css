@@ -5,6 +5,7 @@
 canvas {
     width: calc(210px * var(--scale));
     height: calc(297px * var(--scale));
+    border: solid red 1px;
 }
 
 .pixelated {

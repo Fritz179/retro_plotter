@@ -17,7 +17,7 @@ calibrateSync()
 //     goUntilEndAndLog(500, 0, -1)
 // }
 
-const {setGenerator, empty, setMessager: setGeneratorMessager} = require('./generator.js')
+const {setGenerator, empty, setMessager: setGeneratorMessager, getGenerator} = require('./generator.js')
 
 //////////////
 
@@ -212,14 +212,21 @@ function parseActions(text) {
         .map(action => action.split(/,?\s+/))
 }
 
+let generator = null
 function draw(text) {
+
+    // Set new generator if last was cleared
+    if (getGenerator() != generator) {
+        generator = drawGnerator()
+        setGenerator(generator)
+    }
+
     axis.setCallback(axis => {
         console.log(`Endschalter reached!! ${axis}`)
         assert(false, axis)
     })
 
     parseActions(text)
-    setGenerator(drawGnerator())
 }
 
 let sendMessage = () => {}
@@ -232,7 +239,7 @@ function setMessager(msger) {
 
 module.exports = {
     draw,
-    setMessager
+    setMessager,
 }
 
 // pulse => return a pulse

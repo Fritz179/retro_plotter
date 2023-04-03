@@ -117,15 +117,28 @@ function setGenerator(newGenerator) {
     generator = newGenerator
 }
 
+function getGenerator() {
+    return generator
+}
+
 let sendMessage = () => {}
 
 function setMessager(msgr) {
     sendMessage = msgr
 }
 
+// Potentially leaking some memory => buy some more ;-)
+function clearGenerator() {
+    lastId = null
+    deleteId = null
+    generator = emptyGenerator()
+}
+
 module.exports = {
     setGenerator,
     empty,
     breakable,
-    setMessager
+    setMessager,
+    clearGenerator,
+    getGenerator
 }

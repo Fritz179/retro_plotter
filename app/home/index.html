@@ -94,6 +94,7 @@
         <button id="manual-penup">Pen UP!</button>
         <button id="manual-pendown">Pen DOWN!</button>
         <button id="manual-paper">paper please!</button>
+        <button id="manual-calibrate">Recalibrate!</button>
 
         <br>
 
@@ -104,6 +105,15 @@
     <div id="textChoice">
         <label for="text">Choose a text to print:</label>
         <textarea name="text" id="text" cols="20" rows="2"></textarea>
+        <br>
+        <label for="textSizing">Choose formatting parameters `x,y,w,s,h` in mm:</label>
+        <input type="text" name="textSizing" id="textSizing" value="10,10,200,0.9,32">
+        <br>
+        <label for="defaultText">Choose a default text:</label>
+        <select name="defaultText" id="defaultText">
+            <option value="all">0x20-0x7E</option>
+            <option value="lorem">lorem</option>
+        </select>
     </div>
     
     <div id="yChoice">
@@ -226,6 +236,9 @@
             <pre id="g"></pre>
 
             <br>
+
+            <label for="margins">Choose the margins `U, R, D, L` in mm:</label>
+            <input type="text" value="31,7,6,23" id="margins"> <br>
 
             <label for="delay">Choose a delay (1 / speed):</label>
             <input type="text" value="500" id="delay"> <br>

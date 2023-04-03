@@ -3,6 +3,8 @@ const mm = 80
 const maxWidth = 210 * mm
 const maxHeight = 197 * mm
 
+const marginsInput = document.querySelector('#margins')
+const textSizingInput = document.querySelector('#textSizing')
 const position = document.querySelector('#position')
 socket.on('position', data => {
     const d = JSON.parse(data)
@@ -699,7 +701,7 @@ function generateBasic(points) {
     let code = 'P 1\n'
 
     for (point of points) {
-        code += `M ${point[0]}, ${point[1]}\n`
+        code += `M ${point[0] * mm}, ${point[1] * mm}\n`
         code += 'P 0\n'
         code += 'P 1\n'
     }
@@ -719,13 +721,13 @@ function generateLinear(points) {
             if (wasSame) code.pop()
             wasSame = true
 
-            code.push(`M ${point[0]}, ${point[1]}`)
+            code.push(`M ${point[0] * mm}, ${point[1] * mm}`)
 
         } else {
             wasSame = false
 
             code.push('P 1')
-            code.push(`M ${point[0]}, ${point[1]}`)
+            code.push(`M ${point[0] * mm}, ${point[1] * mm}`)
             code.push('P 0')
         }
 
@@ -793,6 +795,8 @@ function updateExec() {
     let pos = [0, 0]
     let pointing = false
 
+    const margins = marginsInput.value.split(',').map(n => Number(n) * mm);
+
     currCode.split('\n').filter(l => l).forEach((code, index) => {
         let [type, ...params] = code.split(/,? +/)
         params = params.map(n => Number(n))
@@ -817,8 +821,8 @@ function updateExec() {
                 const dy = y2 - y1
 
                 // moves more on the x axis
-                for (let x = x1; x <= x2; x++) {
-                    y = Math.round(y2 - dy * (x2 - x) / dx)
+                for (let x = Math.floor(x1 / mm); x <= Math.ceil(x2 / mm); x++) {
+                    y = Math.round((y2 - dy * (x2 - x * mm) / dx) / mm)
                     data[y * width + x] = 0
                 }
             } else {
@@ -833,8 +837,8 @@ function updateExec() {
 
                 if (dy != 0) {
                     // moves more on the y axis
-                    for (let y = y1; y <= y2; y++) {
-                        x = Math.round(x2 - dx * (y2 - y) / dy)
+                    for (let y = Math.floor(y1 / mm); y <= Math.ceil(y2 / 80); y++) {
+                        x = Math.round((x2 - dx * (y2 - y * mm) / dy) / mm)
                         data[y * width + x] = 0
                     }
                 }                
@@ -843,12 +847,29 @@ function updateExec() {
             pos = params
         }
 
+        function map(n, min1, max1, min2, max2) {
+            return (n - min1) / (max1 - min1) * (max2 - min2) + min2
+        }
+
+        // Top left = 150, 860
+        // Bottom right = 16700, 24350  
+
+        function mapX(x) {
+            // return map(x, 0, width * mm, margins[3] + 150, width * mm - margins[1])
+            return map(x, 0, width * mm, margins[3] + 150, 16700 - margins[1])
+        }
+
+        function mapY(y) {
+            // return map(y, 0, height * mm, margins[0] + 860, height * mm - margins[2])
+            return map(y, 0, height * mm, margins[0] + 860, 24350 - margins[2])
+        }
+        
+        // TODO: Should break long lines into smaller ones for clearing generator
         function moveTo() {
-            const spacing = 10
             assert(2)
 
-            const x = (params[0] / width * (width - spacing * 2) + spacing) * mm
-            const y = (params[1] / height * (height - spacing * 2) + spacing * 2) * mm
+            const x = mapX(params[0])
+            const y = mapY(params[1])
 
             sendableCode.push(`M ${Math.round(x)}, ${Math.round(y)}`)
             if (pointing) {
@@ -937,15 +958,15 @@ function drawCharAt(char, x, y, scale = 1) {
         return
     }
 
-    const s = n => Math.round(n * scale)
+    const s = n => n * scale * mm
     
     data.lines.forEach(line => {
-        code.push(`M ${s(line[0][0]) + x}, ${y - s(line[0][1])}`)
+        code.push(`M ${Math.round(s(line[0][0]) + x)}, ${Math.round(y - s(line[0][1]))}`)
         code.push(`P 0`)
 
         for (let i = 1; i < line.length; i++) {
             const [xx, yy] = line[i]
-            code.push(`M ${s(xx) + x}, ${y - s(yy)}`)
+            code.push(`M ${Math.round(s(xx) + x)}, ${Math.round(y - s(yy))}`)
         }
 
         code.push(`P 1`)
@@ -962,17 +983,25 @@ function drawCharAt(char, x, y, scale = 1) {
 
 //  !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
 
-const textHeight = 32
+// const textHeight = 32 * mm 
+// Replaced by textSizingH
 
 function drawText(text) {
+    const textSizing = textSizingInput.value.split(',').map(n => Number(n))
+    const textSizingX = textSizing[0] * mm
+    const textSizingY = textSizing[1] * mm
+    const textSizingW = textSizing[2] * mm
+    const textSizingS = textSizing[3]
+    const textSizingH = textSizing[4] * mm
+
     code = ['P 1']
-    let dx = 0
-    let h = textHeight
+    let dx = textSizingX
+    let h = textSizingH * textSizingS + textSizingY
 
     text.split('').forEach(char => {
         if (char == '\n') {
-            dx = 0
-            h += textHeight
+            dx = textSizingX
+            h += textSizingH * textSizingS
             return
         }
 
@@ -983,14 +1012,14 @@ function drawText(text) {
             return
         }
 
-        if (dx + data.spacing > execCanvas.width) {
-            dx = 0
-            h += textHeight
+        if (dx + data.spacing * mm > textSizingW) {
+            dx = textSizingX
+            h += textSizingH * textSizingS
         }
         
-        drawCharAt(char, dx, h, 1)
+        drawCharAt(char, dx, h, textSizingS)
 
-        dx += data.spacing
+        dx += data.spacing * mm * textSizingS
     })
 
     currCode = code.join('\n')
@@ -999,6 +1028,7 @@ function drawText(text) {
 
 const text = document.querySelector('#text')
 text.addEventListener('input', textListener)
+textSizingInput.addEventListener('input', textListener)
 
 function textListener() {
     drawText(text.value)
@@ -1035,10 +1065,12 @@ function gcodeListener(code) {
 const manualUp = document.querySelector('#manual-penup')
 const manualDown = document.querySelector('#manual-pendown')
 const manualPaper = document.querySelector('#manual-paper')
+const manualRecalibrate = document.querySelector('#manual-calibrate')
 
 manualUp.onclick = () => gcodeListener('P 1')
 manualDown.onclick = () => gcodeListener('P 0')
 manualPaper.onclick = () => gcodeListener('P 1\nD 500\nM 8000, 20')
+manualRecalibrate.onclick = () => socket.emit('recalibrate')
 
 const funY = document.querySelector('#funY')
 const funXY_X = document.querySelector('#funXY-X')
@@ -1127,7 +1159,7 @@ function calculateFunction() {
 
     function addPoint(x, y) {
         if (isIn(x, y)) {
-            code.push(`M ${x}, ${y}`)
+            code.push(`M ${Math.round(x * mm)}, ${Math.round(y * mm)}`)
 
             if (!down) {
                 code.push('P 0')
@@ -1276,4 +1308,21 @@ function calculateFunction() {
     }
 }
 
-drawText(` !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_\`abcdefghijklmnopqrstuvwxyz{|}~`)
+const defaultText = document.querySelector('#defaultText')
+const textTable = {
+    all: [` !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_\`abcdefghijklmnopqrstuvwxyz{|}~`, '10,10,200,0.9,32'],
+    lorem: [`Lorem ipsum dolor sit amet consectetur adipisicing elit. Tempore voluptas sapiente sit expedita debitis quisquam, odio, quaerat consequatur dicta iure laborum consequuntur quas aut eaque facere. Pariatur quam veniam quidem!`, '10,10,200,0.5,32']
+}
+
+defaultText.addEventListener('change', () => {
+    const value = textTable[defaultText.value]
+    text.value = value[0]
+    textSizingInput.value = value[1]
+    drawText(value[0])
+})
+
+drawText(textTable.all[0])
+
+
+// Top left = 150, 860
+// Bottom right = 16700, 24350
