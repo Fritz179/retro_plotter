@@ -26,6 +26,8 @@ function createWave() {
         if (data.length >= targetSize) break
     }
 
+    if (time == 0) return
+
     // TODO: Pad stoppable
     while (data.length < targetSize) {
         data.push(empty)
@@ -55,7 +57,12 @@ function createWave() {
 
 function sendWave() {
     const waveId = createWave()
-    if (typeof waveId != 'number') return
+    if (typeof waveId != 'number') {
+        pigpio.waveClear()
+        lastId = null
+        deleteId = null
+        return
+    }
 
     if (pigpio.waveTxBusy()) {
         // console.log('Sending wave as SYNC')
@@ -86,10 +93,10 @@ function consume() {
         }
     } catch(e) {
         // Ignore this error
-        // if (e.message == 'pigpio error 9999 in gpioWaveTxAt') {
-        //     console.log(e.message)
-        //     return
-        // }
+        if (e.message == 'pigpio error 9999 in gpioWaveTxAt') {
+            console.log(e.message)
+            return
+        }
 
         console.error('Consume error')
         console.log(e.message)

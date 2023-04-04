@@ -108,14 +108,49 @@ function* goTo(x, y, delay = () => 1000) {
     let xd = x - axis.x.position
     let yd = y - axis.y.position
 
+    let len = Math.sqrt(Math.abs(xd) * Math.abs(yd))
+
+    // split long lines
+    if (len > 100) {
+        const times = Math.ceil(len / 100)
+        xd = Math.ceil(xd / times)
+        yd = Math.ceil(yd / times)
+        actions.unshift(['M', x, y])
+
+        console.log(len, times, xd, yd)
+    }
+
     yield* axis.genPulseDirection(Math.sign(xd), Math.sign(yd))
+
+    axis.x.position += xd
+    axis.y.position += yd
 
     xd = Math.abs(xd)
     yd = Math.abs(yd)
 
-    axis.x.position = x
-    axis.y.position = y
     yield* moveBy(xd, yd, delay)
+}
+
+function* playSound(frequency, times, repeat) {
+    const on  = { gpioOn: axis.x.stepPin, gpioOff: 0, usDelay: Math.round(frequency / 2) }
+    const off = { gpioOn: 0, gpioOff: axis.x.stepPin, usDelay: Math.round(frequency / 2) }
+    console.log(frequency, times)
+    
+    function* spam() {
+        for (let i = 0; i < repeat; i++) {
+            yield on
+            yield off
+        }
+    }
+    for (let i = 0; i < times; i++) {
+        yield axis.x.pulsePositiveDirection(() => 1)
+        yield* spam()
+        yield axis.x.pulseNegativeDirection(() => 1)
+        yield* spam()
+
+    }
+
+    return
 }
 
 function* penUp() {
@@ -186,6 +221,11 @@ function* drawGnerator() {
             case 'D':
                 assertLen(1)
                 params.delay = values[0]
+                break;
+
+            case 'F':
+                assertLen(3)
+                yield* playSound(values[0], values[1], values[2])
                 break;
 
             case 'P':

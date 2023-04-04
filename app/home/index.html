@@ -20,6 +20,8 @@
     <select name="chose" id="chose">
         <option value="textChoice">Text</option>
         <option value="gcodeChoice">Manual</option>
+        <option value="realtimeChoice">Real time</option>
+        <option value="soundChoiche">Sound</option>
         <option value="imageChoice">Picture</option>
         <option value="yChoice">Y-Function</option>
         <option value="xyChoice">X&Y-Functions</option>
@@ -102,6 +104,21 @@
         <textarea name="gcode" id="gcode" cols="20" rows="2"></textarea>
     </div>
 
+    <div id="realtimeChoice">
+        Just hover around! ;-)
+    </div>
+
+    <div id="soundChoiche">
+        <label for="paramA" id="paramALabel">Frequency:</label><br>
+        <input type="range" name="paramA" id="paramA" value="10"><br>
+
+        <label for="paramB" id="paramBLabel">Strength:</label><br>
+        <input type="range" name="paramB" id="paramB" value="10"><br>
+        
+        <label for="activeSound">Active:</label>
+        <input type="checkbox" name="activeSound" id="activeSound">
+    </div>
+
     <div id="textChoice">
         <label for="text">Choose a text to print:</label>
         <textarea name="text" id="text" cols="20" rows="2"></textarea>
@@ -113,6 +130,8 @@
         <select name="defaultText" id="defaultText">
             <option value="all">0x20-0x7E</option>
             <option value="lorem">lorem</option>
+            <option value="dante">Divina</option>
+            <option value="faust">Faust</option>
         </select>
     </div>
     

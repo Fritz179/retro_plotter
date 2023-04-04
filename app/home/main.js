@@ -22,16 +22,21 @@ chose.addEventListener('input', choiceHandler)
 const imageChoice = document.querySelector('#imageChoice')
 const textChoice = document.querySelector('#textChoice')
 const gcodeChoice = document.querySelector('#gcodeChoice')
+const realtimeChoice = document.querySelector('#realtimeChoice')
+const soundChoiche = document.querySelector('#soundChoiche')
 const yChoice = document.querySelector('#yChoice')
 const xyChoice = document.querySelector('#xyChoice')
 const equationChoice = document.querySelector('#equationChoice')
 const codeAlgChoice = document.querySelector('#codeAlgChoice')
 const graphParameters = document.querySelector('#graphParameters')
+let initialized = false
 
 function choiceHandler() {
     imageChoice.style.display = 'none'
     textChoice.style.display = 'none'
     gcodeChoice.style.display = 'none'
+    realtimeChoice.style.display = 'none'
+    soundChoiche.style.display = 'none'
     yChoice.style.display = 'none'
     xyChoice.style.display = 'none'
     equationChoice.style.display = 'none'
@@ -42,6 +47,8 @@ function choiceHandler() {
         case 'imageChoice': imageChoice.style.display = 'block'; codeAlgChoice.style.display = 'block'; break;
         case 'textChoice': textChoice.style.display = 'block'; break;
         case 'gcodeChoice': gcodeChoice.style.display = 'block'; break;
+        case 'realtimeChoice': realtimeChoice.style.display = 'block'; break;
+        case 'soundChoiche': soundChoiche.style.display = 'block'; break;
         case 'yChoice': yChoice.style.display = 'block'; graphParameters.style.display = 'block'; break;
         case 'xyChoice': xyChoice.style.display = 'block'; graphParameters.style.display = 'block'; break;
         case 'equationChoice': equationChoice.style.display = 'block'; codeAlgChoice.style.display = 'block'; graphParameters.style.display = 'block'; break;
@@ -49,6 +56,9 @@ function choiceHandler() {
         default:
             throw `Invalid choice: ${chose.value}`
     }
+
+    setSound(chose.value == 'soundChoiche')
+    setRealtime(chose.value == 'realtimeChoice')
 }
 
 const usDelay = document.getElementById('delay')
@@ -775,8 +785,6 @@ function updateExec() {
     if (typeof delay != 'number' || delay == NaN) delay = 500
     sendableCode = ['P 1', `D ${delay}`]
 
-    console.log(delay)
-
     execCtx.clearRect(0, 0, execCanvas.width, execCanvas.height)
     const len = currCode.split('\n').length
     gInfo.innerHTML = `Number of commands: ${len}\nCode lengh: NOT_IMPLEMENTED`
@@ -893,6 +901,12 @@ function updateExec() {
             sendableCode.push(`D ${params[0]}`)
         }
 
+        function frequency() {
+            assert(3)
+
+            sendableCode.push(`F ${params[0]}, ${params[1]}, ${params[2]}`)
+        }
+
 
         function cubicBaiser() {
             throw 'Not implemented: cubicBaiser'
@@ -926,6 +940,7 @@ function updateExec() {
             case 'P': pen(); break;
             case 'M': moveTo(); break;
             case 'D': delay(); break;
+            case 'F': frequency(); break;
             // case 'C': cubicBaiser(); break;
             // case 'Q': quadraticBaiser(); break;
         
@@ -1071,6 +1086,88 @@ manualUp.onclick = () => gcodeListener('P 1')
 manualDown.onclick = () => gcodeListener('P 0')
 manualPaper.onclick = () => gcodeListener('P 1\nD 500\nM 8000, 20')
 manualRecalibrate.onclick = () => socket.emit('recalibrate')
+
+function setRealtime(active) {
+    if (!initialized) {
+        initialized = true
+        return
+    }
+
+    if (active) {
+        execCanvas.addEventListener('mousemove', realTimeHandlerMouse)
+        window.addEventListener('mousedown', realTimeHandlerClick)
+        window.addEventListener('mouseup', realTimeHandlerClickUp)
+    } else {
+        window.removeEventListener('mouseup', realTimeHandlerClickUp)
+        window.removeEventListener('mousedown', realTimeHandlerClick)
+        execCanvas.removeEventListener('mousemove', realTimeHandlerMouse)
+    }
+}
+
+function realTimeHandlerMouse(e) {
+    let x = (e.x - execCanvas.offsetLeft) / execCanvas.scrollWidth
+    let y = (e.y - execCanvas.offsetTop) / execCanvas.scrollHeight
+
+    function map(n, min1, max1, min2, max2) {
+        return (n - min1) / (max1 - min1) * (max2 - min2) + min2
+    }
+
+    // Top left = 150, 860
+    // Bottom right = 16700, 24350  
+    const width = execCanvas.width
+    const margins = marginsInput.value.split(',').map(n => Number(n) * mm);
+    const height = execCanvas.height
+
+    function mapX(x) {
+        return map(x, 0, 1, margins[3] + 150, 16700 - margins[1])
+    }
+
+    function mapY(y) {
+        return map(y, 0, 1, margins[0] + 860, 24350 - margins[2])
+    }
+
+    const delay = Number(usDelay.value)
+    if (typeof delay != 'number' || delay == NaN) delay = 500
+
+    gcodeListener(`D ${delay}\nM ${Math.round(mapX(x))}, ${Math.round(mapY(y))}`)
+}
+
+function realTimeHandlerClick(e) {
+    gcodeListener('P 0')
+}
+
+function realTimeHandlerClickUp(e) {
+    gcodeListener('P 1')
+}
+
+let soundActive = false
+function setSound(value) {
+    if (!initialized) return
+    soundActive = value
+}
+
+const paramA = document.querySelector('#paramA')
+const paramB = document.querySelector('#paramB')
+const paramALabel = document.querySelector('#paramALabel')
+const paramBLabel = document.querySelector('#paramBLabel')
+const activeSound = document.querySelector('#activeSound')
+function playSound() {
+    if (!soundActive) return
+
+    const frequency = paramA.value
+    const repeatOneDirection = paramB.value
+    const times = Math.max(Math.round(100000 / (frequency * repeatOneDirection)), 10)
+
+    // console.log(frequency * repeatOneDirection * times)
+    paramALabel.innerHTML = 'Frequency: ' + frequency
+    paramBLabel.innerHTML = 'Strength: ' + repeatOneDirection
+
+    if (!activeSound.checked) return
+
+    gcodeListener(`F ${frequency}, ${times}, ${repeatOneDirection}`)
+}
+
+setInterval(playSound, 10)
 
 const funY = document.querySelector('#funY')
 const funXY_X = document.querySelector('#funXY-X')
@@ -1311,7 +1408,70 @@ function calculateFunction() {
 const defaultText = document.querySelector('#defaultText')
 const textTable = {
     all: [` !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_\`abcdefghijklmnopqrstuvwxyz{|}~`, '10,10,200,0.9,32'],
-    lorem: [`Lorem ipsum dolor sit amet consectetur adipisicing elit. Tempore voluptas sapiente sit expedita debitis quisquam, odio, quaerat consequatur dicta iure laborum consequuntur quas aut eaque facere. Pariatur quam veniam quidem!`, '10,10,200,0.5,32']
+    lorem: [`Lorem ipsum dolor sit amet consectetur adipisicing elit. Tempore voluptas sapiente sit expedita debitis quisquam, odio, quaerat consequatur dicta iure laborum consequuntur quas aut eaque facere. Pariatur quam veniam quidem!`, '10,10,200,0.5,32'],
+    dante: [`Nel mezzo del cammin di nostra vita
+mi ritrovai per una selva oscura,
+che la diritta via era smarrita.
+
+Ahi quanto a dir qual era e cosa dura,
+esta selva selvaggia e aspra e forte,
+che nel pensier rinova la paura!
+
+Tant'e amara che poco e piu morte;
+ma per trattar del ben ch'i' vi trovai,
+diro de l'altre cose ch'i' v'ho scorte.
+
+Io non so ben ridir com'i' v'intrai,
+tant'era pien di sonno a quel punto
+che la verace via abbandonai.`, '10,10,200,0.35,32'],
+    faust: [`Faust.
+Misshor' mich nicht, du holdes Angesicht!
+Wer darf ihn nennen?
+Und wer bekennen:
+Ich glaub' ihn.
+Wer empfinden?
+Und sich unterwinden
+Zu sagen: ich glaub' ihn nicht.
+Der Allumfasser,
+Der Allerhalter,
+Fasst und erhalt er nicht
+Dich, mich, sich selbst?
+Wolbt sich der Himmel nicht dadroben?
+Liegt die Erde nicht hierunten fest?
+Und steigen freundlich blickend
+Ewige Sterne nicht herauf?
+Schau' ich nicht Aug' in Auge dir,
+Und drangt nicht alles
+Nach Haupt und Herzen dir,
+Und webt in ewigem Geheimniss
+Unsichtbar sichtbar neben dir?
+Erfull' davon dein Herz, so gross es ist,
+Und wenn du ganz in dem Gefuhle selig bist,
+Nenn' es dann wie du willst,
+Nenn's Gluck! Herz! Liebe! Gott!
+Ich habe keinen Nahmen
+Dafur! Gefuhl ist alles;
+Name ist Schall und Rauch,
+Umnebelnd Himmelsgluth.
+
+Margarete.
+Das ist alles recht schon und gut;
+Ungefahr sagt das der Pfarrer auch,
+Nur mit ein Bischen andern Worten.
+
+Faust.
+Es sagen's aller Orten
+Alle Herzen unter dem himmlischen Tage,
+Jedes in seiner Sprache;
+Warum nicht ich in der meinen?
+
+Margarete.
+Wenn man's so hort, mocht's leidlich scheinen,
+Steht aber doch immer schief darum;
+Denn du hast kein Christenthum.
+
+Faust.
+Lieb's Kind!`, '10,10,200,0.28,32']
 }
 
 defaultText.addEventListener('change', () => {
@@ -1326,3 +1486,62 @@ drawText(textTable.all[0])
 
 // Top left = 150, 860
 // Bottom right = 16700, 24350
+
+/*
+
+Faust.
+Misshor' mich nicht, du holdes Angesicht!
+Wer darf ihn nennen?
+Und wer bekennen:
+Ich glaub' ihn.
+Wer empfinden?
+Und sich unterwinden
+Zu sagen: ich glaub' ihn nicht.
+Der Allumfasser,
+Der Allerhalter,
+Fasst und erhalt er nicht
+Dich, mich, sich selbst?
+Wolbt ſich der Himmel nicht dadroben?
+Liegt die Erde nicht hierunten feſt?
+Und ſteigen freundlich blickend
+Ewige Sterne nicht herauf?
+Schau' ich nicht Aug' in Auge dir,
+Und drangt nicht alles
+Nach Haupt und Herzen dir,
+Und webt in ewigem Geheimniss
+Unſichtbar ſichtbar neben dir?
+Erfull' davon dein Herz, ſo gross es iſt,
+
+///////////////////////////////////////
+
+Und wenn du ganz in dem Gefuhle selig bist,
+Nenn' es dann wie du willst,
+Nenn's Gluck! Herz! Liebe! Gott!
+Ich habe keinen Nahmen
+Dafur! Gefuhl ist alles;
+Name ist Schall und Rauch,
+Umnebelnd Himmelsgluth.
+
+Margarete.
+Das ist alles recht schon und gut;
+Ungefahr sagt das der Pfarrer auch,
+Nur mit ein Bischen andern Worten.
+Faust.
+
+Es sagen's aller Orten
+Alle Herzen unter dem himmlischen Tage,
+Jedes in seiner Sprache;
+Warum nicht ich in der meinen?
+Margarete.
+
+Wenn man's so hort, mocht's leidlich scheinen,
+Steht aber doch immer schief darum;
+Denn du hast kein Christenthum.
+
+Faust.
+Lieb's Kind!
+
+10,10,200,0.28,32
+
+
+*/
