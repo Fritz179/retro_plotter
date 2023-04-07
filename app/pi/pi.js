@@ -135,7 +135,7 @@ function* playSound(frequency, times, repeat) {
     const off = { gpioOn: 0, gpioOff: axis.x.stepPin, usDelay: Math.round(frequency / 2) }
     
     if (!frequency) {
-        yield { gpioOn: axis.x.stepPin, gpioOff: 0, usDelay: 1 }
+        // yield { gpioOn: axis.x.stepPin, gpioOff: 0, usDelay: 1 }
         yield { gpioOn: 0, gpioOff: axis.x.stepPin, usDelay: Math.round(times) }
         return
     }
@@ -153,10 +153,53 @@ function* playSound(frequency, times, repeat) {
         yield* spam()
         yield axis.x.pulseNegativeDirection(() => 1)
         yield* spam()
-
     }
 
     return
+}
+
+const midi = require('../midi/getData.js')
+
+function* playSong() {
+    const song = midi.play
+
+    for (let i = 0; i < song.length; i++) {
+        const piece = song[i]
+        
+        if (!piece.notes.length) {
+            yield { gpioOn: 0, gpioOff: axis.x.stepPin, usDelay: Math.round(piece.time) }
+            continue
+        }
+
+        // const times = Math.max(Math.round(piece.time / (frequency * piece.strength)), 1)
+
+        const totalTime = Math.round(piece.time / piece.strength)
+        let runningTime = 0
+
+        let index = 0
+        function* spam() {
+            if (index >= piece.notes.length) index = 0
+            const frequency = piece.notes[index++]
+            const on  = { gpioOn: axis.x.stepPin, gpioOff: 0, usDelay: Math.round(frequency / 2) }
+            const off = { gpioOn: 0, gpioOff: axis.x.stepPin, usDelay: Math.round(frequency / 2) }
+
+            runningTime += frequency
+
+            for (let time = 0; time < piece.strength; time++) {
+                yield on
+                yield off
+            }
+        }
+
+        while (runningTime < totalTime) {
+            yield axis.x.pulsePositiveDirection(() => 1)
+            yield* spam()
+            yield axis.x.pulseNegativeDirection(() => 1)
+            yield* spam()
+        }
+
+
+    }
 }
 
 function* penUp() {
@@ -227,6 +270,11 @@ function* drawGnerator() {
             case 'D':
                 assertLen(1)
                 params.delay = values[0]
+                break;
+
+            case 'X':
+                assertLen(0)
+                yield* playSong()
                 break;
 
             case 'F':

@@ -1,7 +1,5 @@
 require('dotenv').config();
 
-const midi = require('./midi/getData.js')
-
 //setup express
 const app = require('express')()
 require('./setup/express.js')(app, __dirname);
@@ -34,7 +32,7 @@ function sendMessage(name, data) {
 }
 
 // console.log(midi)
-draw(midi.eiffel)
+draw('X')
 
 setMessager(sendMessage)
 
