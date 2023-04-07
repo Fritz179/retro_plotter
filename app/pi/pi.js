@@ -160,8 +160,12 @@ function* playSound(frequency, times, repeat) {
 
 const midi = require('../midi/getData.js')
 
-function* playSong() {
-    const song = midi.play
+function* playSong(i) {
+    let song = midi.doom[i]
+
+    if (i == 0) song = midi.mario
+    if (i == 10) song = midi.wii
+
 
     for (let i = 0; i < song.length; i++) {
         const piece = song[i]
@@ -173,19 +177,28 @@ function* playSong() {
 
         // const times = Math.max(Math.round(piece.time / (frequency * piece.strength)), 1)
 
-        const totalTime = Math.round(piece.time / piece.strength)
+        const totalTime = Math.round(piece.time / 8)
         let runningTime = 0
 
+        let runIndex = 0
         let index = 0
         function* spam() {
             if (index >= piece.notes.length) index = 0
-            const frequency = piece.notes[index++]
+
+            // if (index > runIndex) {
+            //     index = 0
+            //     runIndex++
+            //     if (runIndex >= piece.notes.length) runIndex = 0
+            // }
+
+            const toPlay = piece.notes[index++]
+            const frequency = toPlay.note
             const on  = { gpioOn: axis.x.stepPin, gpioOff: 0, usDelay: Math.round(frequency / 2) }
             const off = { gpioOn: 0, gpioOff: axis.x.stepPin, usDelay: Math.round(frequency / 2) }
 
             runningTime += frequency
 
-            for (let time = 0; time < piece.strength; time++) {
+            for (let time = 0; time < toPlay.strength; time++) {
                 yield on
                 yield off
             }
@@ -273,8 +286,8 @@ function* drawGnerator() {
                 break;
 
             case 'X':
-                assertLen(0)
-                yield* playSong()
+                assertLen(1)
+                yield* playSong(values[0])
                 break;
 
             case 'F':

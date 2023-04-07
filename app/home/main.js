@@ -1168,6 +1168,14 @@ function playSound() {
 
 setInterval(playSound, 10)
 
+const playSong = document.querySelector('#playSong')
+const songSelection = document.querySelector('#songSelection')
+
+playSong.onclick = () => {
+    const val = songSelection.value
+    gcodeListener(`X ${val}`)
+}
+
 const funY = document.querySelector('#funY')
 const funXY_X = document.querySelector('#funXY-X')
 const funXY_Y = document.querySelector('#funXY-Y')

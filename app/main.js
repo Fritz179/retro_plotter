@@ -32,7 +32,7 @@ function sendMessage(name, data) {
 }
 
 // console.log(midi)
-draw('X')
+// draw('X, 1')
 
 setMessager(sendMessage)
 
