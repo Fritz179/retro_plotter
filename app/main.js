@@ -1,5 +1,7 @@
 require('dotenv').config();
 
+const midi = require('./midi/getData.js')
+
 //setup express
 const app = require('express')()
 require('./setup/express.js')(app, __dirname);
@@ -7,6 +9,7 @@ require('./setup/express.js')(app, __dirname);
 // socket
 const { Server } = require("socket.io");
 const { calibrateSync } = require('./pi/calibrate.js');
+calibrateSync()
 
 // connect the raspberry
 const {draw, setMessager} = require('./pi/pi.js')
@@ -30,6 +33,9 @@ function sendMessage(name, data) {
     io.emit(name, data)
 }
 
+// console.log(midi)
+draw(midi.eiffel)
+
 setMessager(sendMessage)
 
 io.on('connection', (socket) => {
@@ -42,6 +48,7 @@ io.on('connection', (socket) => {
     })
 
     socket.on('recalibrate', () => {
+        console.log('New calibration issued')
         calibrateSync()
     })
 

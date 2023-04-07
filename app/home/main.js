@@ -1156,7 +1156,6 @@ function playSound() {
 
     const frequency = paramA.value
     const repeatOneDirection = paramB.value
-    const times = Math.max(Math.round(100000 / (frequency * repeatOneDirection)), 10)
 
     // console.log(frequency * repeatOneDirection * times)
     paramALabel.innerHTML = 'Frequency: ' + frequency
@@ -1164,7 +1163,7 @@ function playSound() {
 
     if (!activeSound.checked) return
 
-    gcodeListener(`F ${frequency}, ${times}, ${repeatOneDirection}`)
+    gcodeListener(`F ${frequency}, ${100000}, ${repeatOneDirection}`)
 }
 
 setInterval(playSound, 10)

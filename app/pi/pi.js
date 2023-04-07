@@ -2,7 +2,6 @@ const assert = require('./assert.js')
 
 // Perform syncronous calibration
 const {calibrateSync, goUntilEndAndLog} = require('./calibrate.js')
-calibrateSync()
 
 // while (true) {
 //     console.log('x axis')
@@ -134,15 +133,22 @@ function* goTo(x, y, delay = () => 1000) {
 function* playSound(frequency, times, repeat) {
     const on  = { gpioOn: axis.x.stepPin, gpioOff: 0, usDelay: Math.round(frequency / 2) }
     const off = { gpioOn: 0, gpioOff: axis.x.stepPin, usDelay: Math.round(frequency / 2) }
-    console.log(frequency, times)
     
+    if (!frequency) {
+        yield { gpioOn: axis.x.stepPin, gpioOff: 0, usDelay: 1 }
+        yield { gpioOn: 0, gpioOff: axis.x.stepPin, usDelay: Math.round(times) }
+        return
+    }
+
+    times = Math.max(Math.round(times / (frequency * repeat)), 1)
+
     function* spam() {
         for (let i = 0; i < repeat; i++) {
             yield on
             yield off
         }
     }
-    for (let i = 0; i < times; i++) {
+    for (let i = 0; i < times / 2; i++) {
         yield axis.x.pulsePositiveDirection(() => 1)
         yield* spam()
         yield axis.x.pulseNegativeDirection(() => 1)

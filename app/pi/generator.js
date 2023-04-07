@@ -48,7 +48,7 @@ function createWave() {
     const waveId = pigpio.waveCreate();
 
     if (time != 0) {
-        console.log(`Created wave: ${waveId}, length: ${data.length}, time: ${time}, Cbs: ${Cbs}, Pulses: ${pulses}`)
+        // console.log(`Created wave: ${waveId}, length: ${data.length}, time: ${time}, Cbs: ${Cbs}, Pulses: ${pulses}`)
     }
     
 
