@@ -750,9 +750,34 @@ function generateLinear(points) {
 function generateFritz(points) {
     let code = 'P 1\n'
 
-    return generateLinear(points)
+    const rows = []
 
-    // return code
+    for (point of points) {
+        let row = point[1]
+
+        if (!rows[row]) rows[row]
+
+        rows[row].push(point)
+    }
+
+    for (let i = 0; i < rows.length; i += 2) {
+        for (point of rows[i]) {
+            code += `M ${point[0] * mm}, ${point[1] * mm}\n`
+            code += 'P 0\n'
+            code += 'P 1\n'
+        }
+
+        if (rows[i + 1]) {
+            for (let j = rows[i + 1].length - 1; j >= 0; j--) {
+                const point = rows[i + 1][j]
+                code += `M ${point[0] * mm}, ${point[1] * mm}\n`
+                code += 'P 0\n'
+                code += 'P 1\n'
+            }
+        }
+    }
+
+    return code
 }
 
 let active = false
